@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    /* CSS code to style the web page */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333333;
+    }
+
+    .container {
+      width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #cccccc;
+      background-color: #ffffff;
+    }
+
+    .input-box {
+      width: 100%;
+      height: 40px;
+      font-size: 20px;
+      padding: 10px;
+      border: 1px solid #cccccc;
+    }
+
+    .button {
+      width: 100%;
+      height: 50px;
+      font-size: 20px;
+      color: #ffffff;
+      background-color: #333333;
+      border: none;
+      cursor: pointer;
+    }
+
+    .output-box {
+      width: 100%;
+      height: 300px;
+      font-size: 16px;
+      padding: 10px;
+      border: 1px solid #cccccc;
+      overflow-y: scroll;
+    }
+  </style>
+</head>
+<body>
+  <h1>Subnet Calculator</h1>
+  <div class="container">
+    <!-- HTML code to create the input and output elements -->
+    <p>Enter a subnet ID in the format of x.x.x.x/y, where x is an octet of an IP address and y is the number of bits in the subnet mask.</p>
+    <input type="text" id="subnet-input" class="input-box" placeholder="Example: 192.168.1.0/24">
+    <button id="calculate-button" class="button">Calculate</button>
+    <p>The list of IP addresses included in the subnet are:</p>
+    <textarea id="output-box" class="output-box" readonly></textarea>
+  </div>
+  <script>
+    // JavaScript code to add functionality to the web page
+    // Get the input and output elements by their IDs
+    var subnetInput = document.getElementById("subnet-input");
+    var calculateButton = document.getElementById("calculate-button");
+    var outputBox = document.getElementById("output-box");
+
+    // Add an event listener to the calculate button
+    calculateButton.addEventListener("click", function() {
+      // Get the value of the subnet input
+      var subnet = subnetInput.value;
+      // Validate the subnet input using a regular expression
+      var regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/;
+      var match = subnet.match(regex);
+      // If the subnet input is valid, proceed with the calculation
+      if (match) {
+        // Get the IP address and the subnet mask from the match array
+        var ip = [match[1], match[2], match[3], match[4]];
+        var mask = match[5];
+        // Convert the IP address and the subnet mask from decimal to binary
+        var ipBin = ip.map(function(octet) {
+          return parseInt(octet).toString(2).padStart(8, "0");
+        }).join("");
+        var maskBin = "1".repeat(mask) + "0".repeat(32 - mask);
+        // Calculate the network ID and the broadcast ID by performing bitwise AND and OR operations
+        var networkID = "";
+        var broadcastID = "";
+        for (var i = 0; i < 32; i++) {
+          networkID += ipBin[i] & maskBin[i];
+          broadcastID += ipBin[i] | (~maskBin[i] & 1);
+        }
+        // Convert the network ID and the broadcast ID from binary to decimal
+        var networkDec = [];
+        var broadcastDec = [];
+        for (var i = 0; i < 32; i += 8) {
+          networkDec.push(parseInt(networkID.slice(i, i + 8), 2));
+          broadcastDec.push(parseInt(broadcastID.slice(i, i + 8), 2));
+        }
+        // Calculate the number of hosts in the subnet by subtracting 2 from the number of bits in the host ID
+        var hosts = Math.pow(2, 32 - mask) - 2;
+        // Initialize an empty array to store the IP addresses in the subnet
+        var ips = [];
+        // Loop through the range of the network ID and the broadcast ID and push the IP addresses to the array
+        for (var i = networkDec[3] + 1; i < broadcastDec[3]; i++) {
+          ips.push(networkDec[0] + "." + networkDec[1] + "." + networkDec[2] + "." + i);
+        }
+        // Display the IP addresses in the output box, separated by new lines
+        outputBox.value = ips.join("\n");
+      } else {
+        // If the subnet input is invalid, display an error message in the output box
+        outputBox.value = "Invalid subnet ID. Please enter a valid subnet ID in the format of x.x.x.x/y.";
+      }
+    });
+  </script>
+</body>
+</html>
